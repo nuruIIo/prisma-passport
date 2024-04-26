@@ -1,11 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 // import { CreateAuthDto } from './dto/create-auth.dto';
 // import { UpdateAuthDto } from './dto/update-auth.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateAuthDto, UpdateAuthDto } from './dto';
 import * as bcrypt from 'bcrypt';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -98,13 +102,6 @@ export class AuthService {
       throw new BadRequestException('incorrect password or email');
     }
 
-    // const newUser = await this.prismaService.user.create({
-    //   data: {
-    //     email: createAuthDto.email,
-    //     hashedPassword,
-    //   },
-    // });
-
     const tokens = await this.getTokens(candidate.id, candidate.email);
 
     await this.updateRefreshToken(candidate.id, tokens.refresh_token);
@@ -116,6 +113,69 @@ export class AuthService {
 
     return tokens;
   }
+
+  async signout(res: Response) {
+    res.clearCookie('refresh_token');
+    return { message: 'Signed out successfully' };
+  }
+
+  // async refresh(req: Request, res: Response) {
+  //   const refreshToken = req.cookies.refresh_token;
+
+  //   if (!refreshToken) {
+  //     throw new UnauthorizedException('Refresh token missing');
+  //   }
+
+  //   const decodedToken = jwt.verify(
+  //     refreshToken,
+  //     process.env.REFRESH_TOKEN_SECRET,
+  //   );
+  //   const userId = decodedToken.userId;
+  //   const userEmail = decodedToken.email;
+
+  //   const tokens = await this.getTokens(userId, userEmail);
+
+  //   await this.updateRefreshToken(userId, tokens.refresh_token);
+
+  //   res.cookie('refresh_token', tokens.refresh_token, {
+  //     maxAge: Number(process.env.COOKIE_TIME),
+  //     httpOnly: true,
+  //   });
+
+  //   return tokens.access_token;
+  // }
+
+  // async logout(userId: Number, res: Response) {
+  //   const candidate = await this.prismaService.user.findUnique({
+  //     where: {
+  //       email: createAuthDto.email,
+  //     },
+  //   });
+
+  //   if (!candidate) {
+  //     throw new BadRequestException('user doesnt exists!');
+  //   }
+
+  //   const comparePassword = await bcrypt.compare(
+  //     createAuthDto.password,
+  //     candidate.hashedPassword,
+  //   );
+
+  //   if (!comparePassword) {
+  //     throw new BadRequestException('incorrect password or email');
+  //   }
+
+  //   const tokens = await this.getTokens(candidate.id, candidate.email);
+
+  //   await this.updateRefreshToken(candidate.id, tokens.refresh_token);
+
+  //   res.cookie('refresh_token', tokens.refresh_token, {
+  //     maxAge: Number(process.env.COOKIE_TIME),
+  //     httpOnly: true,
+  //   });
+
+  //   return tokens;
+  // }
 
   create(createAuthDto: CreateAuthDto) {
     return 'This action adds a new auth';
